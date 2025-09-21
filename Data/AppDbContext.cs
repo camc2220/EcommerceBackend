@@ -19,10 +19,17 @@ namespace EcommerceBackend.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // --- Usuarios ---
-            var adminId = Guid.NewGuid();
-            var userId = Guid.NewGuid();
+            // --- GUIDs fijos ---
+            var adminId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            var userId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+            var product1Id = Guid.Parse("33333333-3333-3333-3333-333333333333");
+            var product2Id = Guid.Parse("44444444-4444-4444-4444-444444444444");
+            var cartItemId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+            var invoiceId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+            var invoiceItemId = Guid.Parse("77777777-7777-7777-7777-777777777777");
+            var paymentId = Guid.Parse("88888888-8888-8888-8888-888888888888");
 
+            // --- Usuarios ---
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
@@ -43,9 +50,6 @@ namespace EcommerceBackend.Data
             );
 
             // --- Productos ---
-            var product1Id = Guid.NewGuid();
-            var product2Id = Guid.NewGuid();
-
             modelBuilder.Entity<Product>().HasData(
                 new Product
                 {
@@ -69,9 +73,7 @@ namespace EcommerceBackend.Data
                 }
             );
 
-            // --- Carrito de usuario ---
-            var cartItemId = Guid.NewGuid();
-
+            // --- Carrito ---
             modelBuilder.Entity<CartItem>().HasData(
                 new CartItem
                 {
@@ -83,8 +85,6 @@ namespace EcommerceBackend.Data
             );
 
             // --- Factura ---
-            var invoiceId = Guid.NewGuid();
-
             modelBuilder.Entity<Invoice>().HasData(
                 new Invoice
                 {
@@ -99,8 +99,6 @@ namespace EcommerceBackend.Data
             );
 
             // --- Items de factura ---
-            var invoiceItemId = Guid.NewGuid();
-
             modelBuilder.Entity<InvoiceItem>().HasData(
                 new InvoiceItem
                 {
@@ -114,7 +112,6 @@ namespace EcommerceBackend.Data
             );
 
             // --- Pagos ---
-            var paymentId = Guid.NewGuid();
             modelBuilder.Entity<Payment>().HasData(
                 new Payment
                 {
