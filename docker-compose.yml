@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ecommercedb
+    ports: ['5432:5432']
+    volumes: ['pgdata:/var/lib/postgresql/data']
+  backend:
+    build: .
+    depends_on: ['db']
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=ecommercedb;Username=postgres;Password=postgres
+      - Jwt__Key=DevelopmentJwtKey12345
+    ports: ['5000:5000']
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports: ['3000:3000']
+    environment:
+      - VITE_API_BASE_URL=http://localhost:5000/api
+volumes: { pgdata: {} }
