@@ -43,10 +43,16 @@ namespace EcommerceBackend.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginDto dto)
         {
+            // Null-safe: buscar usuario por email
             var user = _db.Users.SingleOrDefault(u => u.Email == dto.Email);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                return Unauthorized();
+            if (user == null)
+                return Unauthorized(new { message = "Usuario no encontrado" });
 
+            // Verificar contraseña de forma segura
+            if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+                return Unauthorized(new { message = "Contraseña incorrecta" });
+
+            // Generar token JWT
             var token = _tokenService.GenerateToken(user);
             return Ok(new { token });
         }
