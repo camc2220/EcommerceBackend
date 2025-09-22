@@ -18,7 +18,8 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<TokenService>();
 
 // DB - Connection string from env: ConnectionStrings__DefaultConnection
-var conn = builder.Configuration.GetConnectionString("DefaultConnection") ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+var conn = builder.Configuration.GetConnectionString("DefaultConnection") 
+           ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 if (string.IsNullOrEmpty(conn)) 
 {
     // fallback local for development
@@ -30,7 +31,10 @@ builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(conn));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var key = builder.Configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("Jwt__Key") ?? "devkey";
+        var key = builder.Configuration["Jwt:Key"] 
+                  ?? Environment.GetEnvironmentVariable("Jwt__Key") 
+                  ?? "devkey";
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
@@ -50,7 +54,11 @@ var app = builder.Build();
 
 app.UseCors();
 app.UseSwagger();
-app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ecommerce API v1"); c.RoutePrefix = string.Empty; });
+app.UseSwaggerUI(c => 
+{ 
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ecommerce API v1"); 
+    c.RoutePrefix = string.Empty; 
+});
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
@@ -58,7 +66,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Ensure DB created (not recommended for heavy prod)
+// Ensure DB created (tables only)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
