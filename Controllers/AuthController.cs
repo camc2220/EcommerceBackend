@@ -1,10 +1,11 @@
-using System.Linq;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using EcommerceBackend.Data;
 using EcommerceBackend.Models;
 using EcommerceBackend.Services;
 using BCrypt.Net;
+using Microsoft.EntityFrameworkCore;
 
 namespace EcommerceBackend.Controllers
 {
@@ -24,16 +25,21 @@ namespace EcommerceBackend.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            if (_db.Users.Any(u => u.Email == dto.Email))
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+
+            if (await _db.Users.AsNoTracking().AnyAsync(u => u.Email == normalizedEmail))
                 return BadRequest(new { error = "Email already registered" });
 
             var user = new User
             {
-                Email = dto.Email,
-                FullName = dto.FullName,
+                Email = normalizedEmail,
+                FullName = string.IsNullOrWhiteSpace(dto.FullName) ? null : dto.FullName.Trim(),
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
             };
-            _db.Users.Add(user);
+            await _db.Users.AddAsync(user);
             await _db.SaveChangesAsync();
 
             var token = _tokenService.GenerateToken(user);
@@ -41,18 +47,20 @@ namespace EcommerceBackend.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            // Null-safe: buscar usuario por email
-            var user = _db.Users.SingleOrDefault(u => u.Email == dto.Email);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+
+            var user = await _db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Email == normalizedEmail);
             if (user == null)
                 return Unauthorized(new { message = "Usuario no encontrado" });
 
-            // Verificar contraseña de forma segura
             if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
                 return Unauthorized(new { message = "Contraseña incorrecta" });
 
-            // Generar token JWT
             var token = _tokenService.GenerateToken(user);
             return Ok(new { token });
         }
@@ -60,14 +68,24 @@ namespace EcommerceBackend.Controllers
 
     public class RegisterDto
     {
-        public string Email { get; set; } = null!;
-        public string Password { get; set; } = null!;
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [MinLength(6)]
+        public string Password { get; set; } = string.Empty;
+
         public string? FullName { get; set; }
     }
 
     public class LoginDto
     {
-        public string Email { get; set; } = null!;
-        public string Password { get; set; } = null!;
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
     }
 }
