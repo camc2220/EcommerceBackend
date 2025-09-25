@@ -30,11 +30,16 @@ namespace EcommerceBackend.Data
             var paymentId = Guid.NewGuid();
 
             // --- Usuarios ---
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.NormalizedEmail)
+                .IsUnique();
+
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
                     Id = adminId,
                     Email = "admin@ecommerce.com",
+                    NormalizedEmail = "admin@ecommerce.com",
                     FullName = "Admin",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
                     Role = "admin"
@@ -43,6 +48,7 @@ namespace EcommerceBackend.Data
                 {
                     Id = userId,
                     Email = "user@ecommerce.com",
+                    NormalizedEmail = "user@ecommerce.com",
                     FullName = "Usuario Test",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("User123!"),
                     Role = "user"
