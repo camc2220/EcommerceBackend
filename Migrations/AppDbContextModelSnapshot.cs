@@ -257,6 +257,10 @@ namespace EcommerceBackend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("NormalizedEmail")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("FullName")
                         .HasColumnType("text");
 
@@ -270,6 +274,9 @@ namespace EcommerceBackend.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique();
+
                     b.ToTable("Users");
 
                     b.HasData(
@@ -278,6 +285,7 @@ namespace EcommerceBackend.Migrations
                             Id = new Guid("89b8105d-38e1-4849-abe3-d7c20b99d8a4"),
                             CreatedAt = new DateTime(2025, 9, 21, 2, 19, 46, 202, DateTimeKind.Utc).AddTicks(1762),
                             Email = "admin@ecommerce.com",
+                            NormalizedEmail = "admin@ecommerce.com",
                             FullName = "Admin",
                             PasswordHash = "$2a$12$VCJVrEjQn17n3Vdd4QXdyOjRJr3BZ1M70Y/JlDlh.wur8H.nZwYYO.",
                             Role = "admin"
@@ -287,6 +295,7 @@ namespace EcommerceBackend.Migrations
                             Id = new Guid("d60ec960-bc53-424a-9128-5275fbd4969f"),
                             CreatedAt = new DateTime(2025, 9, 21, 2, 19, 46, 468, DateTimeKind.Utc).AddTicks(7329),
                             Email = "user@ecommerce.com",
+                            NormalizedEmail = "user@ecommerce.com",
                             FullName = "Usuario Test",
                             PasswordHash = "$2a$12$MwOFPEsAFNeID.N9x139jObpJuIlrXzIUMY/ASgGrxUDcLh80CT1W",
                             Role = "user"

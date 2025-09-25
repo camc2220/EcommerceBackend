@@ -31,14 +31,19 @@ namespace EcommerceBackend.Controllers
             var email = dto.Email.Trim();
             var normalizedEmail = email.ToLowerInvariant();
 
-            if (await _db.Users.AsNoTracking().AnyAsync(u => u.Email.ToLower() == normalizedEmail))
+            if (await _db.Users.AsNoTracking().AnyAsync(u => u.NormalizedEmail == normalizedEmail))
                 return BadRequest(new { error = "Email already registered" });
+
+            var password = (dto.Password ?? string.Empty).Trim();
+            if (password.Length < 6)
+                return BadRequest(new { error = "La contraseña debe tener al menos 6 caracteres" });
 
             var user = new User
             {
                 Email = email,
+                NormalizedEmail = normalizedEmail,
                 FullName = string.IsNullOrWhiteSpace(dto.FullName) ? null : dto.FullName.Trim(),
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
             };
             await _db.Users.AddAsync(user);
             await _db.SaveChangesAsync();
@@ -57,11 +62,13 @@ namespace EcommerceBackend.Controllers
             var normalizedEmail = email.ToLowerInvariant();
 
             var user = await _db.Users.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+                .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
             if (user == null)
                 return Unauthorized(new { message = "Usuario no encontrado" });
 
-            if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            var password = (dto.Password ?? string.Empty).Trim();
+
+            if (password.Length == 0 || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 return Unauthorized(new { message = "Contraseña incorrecta" });
 
             var token = _tokenService.GenerateToken(user);
