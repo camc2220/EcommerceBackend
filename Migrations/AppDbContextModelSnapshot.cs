@@ -279,7 +279,7 @@ namespace EcommerceBackend.Migrations
                             CreatedAt = new DateTime(2025, 9, 21, 2, 19, 46, 202, DateTimeKind.Utc).AddTicks(1762),
                             Email = "admin@ecommerce.com",
                             FullName = "Admin",
-                            PasswordHash = "$2a$11$a4XTN3Qs2Pls1KQrRWDlNOEEOLNW5Tn9lUHGYAl0wlgg5cYmHT4f.",
+                            PasswordHash = "$2a$12$VCJVrEjQn17n3Vdd4QXdyOjRJr3BZ1M70Y/JlDlh.wur8H.nZwYYO.",
                             Role = "admin"
                         },
                         new
@@ -288,7 +288,7 @@ namespace EcommerceBackend.Migrations
                             CreatedAt = new DateTime(2025, 9, 21, 2, 19, 46, 468, DateTimeKind.Utc).AddTicks(7329),
                             Email = "user@ecommerce.com",
                             FullName = "Usuario Test",
-                            PasswordHash = "$2a$11$SBZkm5ho6nodxsu1bjQYKeV5rUlWPqwLMxNYvvSZtEkJRD4uHrSjm",
+                            PasswordHash = "$2a$12$MwOFPEsAFNeID.N9x139jObpJuIlrXzIUMY/ASgGrxUDcLh80CT1W",
                             Role = "user"
                         });
                 });
