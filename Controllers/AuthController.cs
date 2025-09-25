@@ -28,14 +28,15 @@ namespace EcommerceBackend.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+            var email = dto.Email.Trim();
+            var normalizedEmail = email.ToLowerInvariant();
 
-            if (await _db.Users.AsNoTracking().AnyAsync(u => u.Email == normalizedEmail))
+            if (await _db.Users.AsNoTracking().AnyAsync(u => u.Email.ToLower() == normalizedEmail))
                 return BadRequest(new { error = "Email already registered" });
 
             var user = new User
             {
-                Email = normalizedEmail,
+                Email = email,
                 FullName = string.IsNullOrWhiteSpace(dto.FullName) ? null : dto.FullName.Trim(),
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
             };
@@ -52,9 +53,11 @@ namespace EcommerceBackend.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+            var email = dto.Email.Trim();
+            var normalizedEmail = email.ToLowerInvariant();
 
-            var user = await _db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Email == normalizedEmail);
+            var user = await _db.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
             if (user == null)
                 return Unauthorized(new { message = "Usuario no encontrado" });
 
