@@ -39,7 +39,29 @@ if (string.IsNullOrWhiteSpace(conn))
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(conn));
 
 // JWT
-var jwtKey = JwtKeyProvider.GetSigningKey(builder.Configuration);
+var jwtKey = builder.Configuration["Jwt:Key"];
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    jwtKey = Environment.GetEnvironmentVariable("Jwt__Key");
+}
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    jwtKey = JwtKeyProvider.DevelopmentFallbackKey;
+}
+
+if (string.IsNullOrWhiteSpace(builder.Configuration["Jwt:Key"]))
+{
+    builder.Configuration["Jwt:Key"] = jwtKey;
+}
+
+if (jwtKey.Length < 16)
+{
+    throw new InvalidOperationException(
+        "JWT key must be at least 16 characters long. Set Jwt:Key/Jwt__Key to a secure value.");
+}
+
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
