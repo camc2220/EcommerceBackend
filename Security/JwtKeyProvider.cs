@@ -6,11 +6,27 @@ namespace EcommerceBackend.Security
 {
     public static class JwtKeyProvider
     {
+        public const string DevelopmentFallbackKey = "development-secret-key-change-me";
         private const int MinimumKeyBytes = 16;
 
         public static string GetSigningKey(IConfiguration configuration)
         {
-            var key = configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("Jwt__Key");
+            if (configuration is null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
+            var key = configuration["Jwt:Key"];
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                key = Environment.GetEnvironmentVariable("Jwt__Key");
+            }
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                key = DevelopmentFallbackKey;
+            }
 
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -25,6 +41,8 @@ namespace EcommerceBackend.Security
                     "The configured JWT signing key must be at least 16 bytes long when encoded as UTF-8."
                 );
             }
+
+            configuration["Jwt:Key"] = key;
 
             return key;
         }

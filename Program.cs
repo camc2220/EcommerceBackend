@@ -39,9 +39,22 @@ if (string.IsNullOrWhiteSpace(conn))
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(conn));
 
 // JWT
-var jwtKey = builder.Configuration["Jwt:Key"]
-              ?? Environment.GetEnvironmentVariable("Jwt__Key")
-              ?? "development-secret-key-change-me";
+var jwtKey = builder.Configuration["Jwt:Key"];
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    jwtKey = Environment.GetEnvironmentVariable("Jwt__Key");
+}
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    jwtKey = JwtKeyProvider.DevelopmentFallbackKey;
+}
+
+if (string.IsNullOrWhiteSpace(builder.Configuration["Jwt:Key"]))
+{
+    builder.Configuration["Jwt:Key"] = jwtKey;
+}
 
 if (jwtKey.Length < 16)
 {
