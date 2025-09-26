@@ -1,6 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using EcommerceBackend.Models;
-using BCrypt.Net;
 
 namespace EcommerceBackend.Data
 {
@@ -15,19 +15,35 @@ namespace EcommerceBackend.Data
         public DbSet<InvoiceItem> InvoiceItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
 
+        public override int SaveChanges()
+        {
+            NormalizeUserEmails();
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            NormalizeUserEmails();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // --- GUIDs generados dinámicamente ---
-            var adminId = Guid.NewGuid();
-            var userId = Guid.NewGuid();
-            var product1Id = Guid.NewGuid();
-            var product2Id = Guid.NewGuid();
-            var cartItemId = Guid.NewGuid();
-            var invoiceId = Guid.NewGuid();
-            var invoiceItemId = Guid.NewGuid();
-            var paymentId = Guid.NewGuid();
+            // --- Identificadores determinísticos para coincidir con las migraciones ---
+            var adminId = Guid.Parse("89b8105d-38e1-4849-abe3-d7c20b99d8a4");
+            var userId = Guid.Parse("d60ec960-bc53-424a-9128-5275fbd4969f");
+            var product1Id = Guid.Parse("488e5e0f-e6eb-44a3-a587-9c3e5f6c5e7b");
+            var product2Id = Guid.Parse("0dd2df11-f26b-4b0a-bd2a-eb9f1c1f94f6");
+            var cartItemId = Guid.Parse("1e8537ac-5a83-4f32-9ba5-248358dae55a");
+            var invoiceId = Guid.Parse("d30b0c2c-d81c-4268-b9ff-1fcaebdb4006");
+            var invoiceItemId = Guid.Parse("c8633a68-aea5-4904-a9b5-5a15de248cc4");
+            var paymentId = Guid.Parse("cb361e92-3347-46f6-8568-8c1671dfbd8d");
+
+            var userCreatedAt = new DateTime(2025, 9, 21, 2, 19, 46, 202, DateTimeKind.Utc).AddTicks(1762);
+            var customerCreatedAt = new DateTime(2025, 9, 21, 2, 19, 46, 468, DateTimeKind.Utc).AddTicks(7329);
+            var productCreatedAt = new DateTime(2025, 9, 21, 2, 19, 46, 692, DateTimeKind.Utc);
 
             // --- Usuarios ---
             modelBuilder.Entity<User>()
@@ -41,8 +57,9 @@ namespace EcommerceBackend.Data
                     Email = "admin@ecommerce.com",
                     NormalizedEmail = "admin@ecommerce.com",
                     FullName = "Admin",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
-                    Role = "admin"
+                    PasswordHash = "$2a$12$VCJVrEjQn17n3Vdd4QXdyOjRJr3BZ1M70Y/JlDlh.wur8H.nZwYYO.",
+                    Role = "admin",
+                    CreatedAt = userCreatedAt
                 },
                 new User
                 {
@@ -50,8 +67,9 @@ namespace EcommerceBackend.Data
                     Email = "user@ecommerce.com",
                     NormalizedEmail = "user@ecommerce.com",
                     FullName = "Usuario Test",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("User123!"),
-                    Role = "user"
+                    PasswordHash = "$2a$12$MwOFPEsAFNeID.N9x139jObpJuIlrXzIUMY/ASgGrxUDcLh80CT1W",
+                    Role = "user",
+                    CreatedAt = customerCreatedAt
                 }
             );
 
@@ -65,7 +83,8 @@ namespace EcommerceBackend.Data
                     Price = 1500m,
                     Stock = 10,
                     Category = "Electrónica",
-                    ImageUrl = ""
+                    ImageUrl = "",
+                    CreatedAt = productCreatedAt.AddTicks(4094)
                 },
                 new Product
                 {
@@ -75,7 +94,8 @@ namespace EcommerceBackend.Data
                     Price = 35m,
                     Stock = 50,
                     Category = "Accesorios",
-                    ImageUrl = ""
+                    ImageUrl = "",
+                    CreatedAt = productCreatedAt.AddTicks(4106)
                 }
             );
 
@@ -86,7 +106,8 @@ namespace EcommerceBackend.Data
                     Id = cartItemId,
                     UserId = userId,
                     ProductId = product2Id,
-                    Quantity = 2
+                    Quantity = 2,
+                    CreatedAt = productCreatedAt.AddTicks(4192)
                 }
             );
 
@@ -99,8 +120,10 @@ namespace EcommerceBackend.Data
                     InvoiceNumber = "INV-001",
                     Status = "Paid",
                     Total = 70m,
+                    Tax = 0m,
                     BillingAddress = "Calle Falsa 123",
-                    PaidAt = DateTime.UtcNow
+                    CreatedAt = productCreatedAt.AddTicks(4258),
+                    PaidAt = productCreatedAt.AddTicks(4267)
                 }
             );
 
@@ -127,9 +150,29 @@ namespace EcommerceBackend.Data
                     Provider = "Stripe",
                     ProviderPaymentId = "pay_001",
                     Status = "Completed",
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = productCreatedAt.AddTicks(4383)
                 }
             );
+        }
+
+        private void NormalizeUserEmails()
+        {
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries<User>())
+            {
+                if (entry.State != EntityState.Added && entry.State != EntityState.Modified)
+                    continue;
+
+                var email = (entry.Entity.Email ?? string.Empty).Trim();
+                entry.Entity.Email = email;
+                entry.Entity.NormalizedEmail = email.ToLowerInvariant();
+
+                if (entry.State == EntityState.Added && entry.Entity.CreatedAt == default)
+                {
+                    entry.Entity.CreatedAt = now;
+                }
+            }
         }
     }
 }

@@ -1,4 +1,6 @@
+using System;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using EcommerceBackend.Data;
@@ -22,8 +24,11 @@ namespace EcommerceBackend.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterDto? dto)
         {
+            if (dto == null)
+                return BadRequest(new { error = "Solicitud inválida" });
+
             var email = (dto.Email ?? string.Empty).Trim();
             var password = (dto.Password ?? string.Empty).Trim();
             var fullName = string.IsNullOrWhiteSpace(dto.FullName) ? null : dto.FullName.Trim();
@@ -35,16 +40,19 @@ namespace EcommerceBackend.Controllers
                 return BadRequest(new { error = "La contraseña debe tener al menos 6 caracteres" });
 
             var normalizedEmail = email.ToLowerInvariant();
+            var defaultRole = User.FindFirstValue(ClaimTypes.Role) ?? "customer";
 
             if (await _db.Users.AsNoTracking().AnyAsync(u => u.NormalizedEmail == normalizedEmail))
                 return Conflict(new { error = "El correo electrónico ya está registrado" });
 
             var user = new User
             {
+                Id = Guid.NewGuid(),
                 Email = email,
                 NormalizedEmail = normalizedEmail,
                 FullName = fullName,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                Role = defaultRole
             };
 
             await _db.Users.AddAsync(user);
@@ -66,15 +74,18 @@ namespace EcommerceBackend.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginDto? dto)
         {
+            if (dto == null)
+                return BadRequest(new { message = "Solicitud inválida" });
+
             var email = (dto.Email ?? string.Empty).Trim();
             var password = (dto.Password ?? string.Empty).Trim();
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                 return BadRequest(new { message = "Correo y contraseña son obligatorios" });
 
-            var normalizedEmail = email.ToLowerInvariant();
+            var normalizedEmail = NormalizeEmail(email);
 
             var user = await _db.Users.AsNoTracking()
                 .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
@@ -87,6 +98,8 @@ namespace EcommerceBackend.Controllers
             var token = _tokenService.GenerateToken(user);
             return Ok(new { token });
         }
+
+        private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
     }
 
     public class RegisterDto

@@ -1,10 +1,11 @@
+using EcommerceBackend.Data;
+using EcommerceBackend.Services;
+using EcommerceBackend.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using EcommerceBackend.Data;
-using EcommerceBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,10 +18,20 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddScoped<TokenService>();
 
-// DB - Connection string from env: ConnectionStrings__DefaultConnection
-var conn = builder.Configuration.GetConnectionString("DefaultConnection") 
+// DB - Connection string from env: ConnectionStrings__DefaultConnection or DATABASE_URL
+var conn = builder.Configuration.GetConnectionString("DefaultConnection")
            ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
-if (string.IsNullOrEmpty(conn)) 
+
+if (string.IsNullOrWhiteSpace(conn))
+{
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrWhiteSpace(databaseUrl))
+    {
+        conn = BuildConnectionStringFromUrl(databaseUrl);
+    }
+}
+
+if (string.IsNullOrWhiteSpace(conn))
 {
     // fallback local for development
     conn = "Host=localhost;Port=5432;Database=ecommercedb;Username=postgres;Password=postgres";
@@ -28,20 +39,28 @@ if (string.IsNullOrEmpty(conn))
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(conn));
 
 // JWT
+var jwtKey = builder.Configuration["Jwt:Key"]
+              ?? Environment.GetEnvironmentVariable("Jwt__Key")
+              ?? "development-secret-key-change-me";
+
+if (jwtKey.Length < 16)
+{
+    throw new InvalidOperationException(
+        "JWT key must be at least 16 characters long. Set Jwt:Key/Jwt__Key to a secure value.");
+}
+
+var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var key = builder.Configuration["Jwt:Key"] 
-                  ?? Environment.GetEnvironmentVariable("Jwt__Key") 
-                  ?? "devkey";
-
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+            IssuerSigningKey = signingKey
         };
     });
 
@@ -60,7 +79,10 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty; 
 });
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -74,3 +96,25 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+static string BuildConnectionStringFromUrl(string databaseUrl)
+{
+    if (!Uri.TryCreate(databaseUrl, UriKind.Absolute, out var uri))
+    {
+        return databaseUrl;
+    }
+
+    var host = uri.Host;
+    var port = uri.IsDefaultPort ? 5432 : uri.Port;
+    var database = uri.AbsolutePath.Trim('/');
+
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+
+    var sslMode = uri.Scheme.StartsWith("postgres", StringComparison.OrdinalIgnoreCase)
+        ? "Require"
+        : "Disable";
+
+    return $"Host={host};Port={port};Database={database};Username={username};Password={password};Ssl Mode={sslMode};Trust Server Certificate=true";
+}

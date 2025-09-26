@@ -287,7 +287,7 @@ namespace EcommerceBackend.Migrations
                             Email = "admin@ecommerce.com",
                             NormalizedEmail = "admin@ecommerce.com",
                             FullName = "Admin",
-                            PasswordHash = "$2a$12$VCJVrEjQn17n3Vdd4QXdyOjRJr3BZ1M70Y/JlDlh.wur8H.nZwYYO.",
+                            PasswordHash = "$2a$12$VCJVrEjQn17n3Vdd4QXdyOjRJr3BZ1M70Y/JlDlh.wur8H.nZwYYO",
                             Role = "admin"
                         },
                         new

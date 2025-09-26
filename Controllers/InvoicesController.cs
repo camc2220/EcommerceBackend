@@ -17,21 +17,32 @@ namespace EcommerceBackend.Controllers
         private readonly AppDbContext _db;
         public InvoicesController(AppDbContext db) => _db = db;
 
-        private Guid UserId => Guid.Parse(User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub));
+        private bool TryGetUserId(out Guid userId)
+        {
+            userId = Guid.Empty;
+            var subject = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+            return !string.IsNullOrWhiteSpace(subject) && Guid.TryParse(subject, out userId);
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetMyInvoices()
         {
-            var inv = await _db.Invoices.Where(i => i.UserId == UserId).ToListAsync();
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var inv = await _db.Invoices.Where(i => i.UserId == userId).ToListAsync();
             return Ok(inv);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetInvoice(Guid id)
         {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
             var inv = await _db.Invoices
                 .Include(i => i.Items)
-                .SingleOrDefaultAsync(i => i.Id == id && i.UserId == UserId);
+                .SingleOrDefaultAsync(i => i.Id == id && i.UserId == userId);
             if (inv == null) return NotFound();
             return Ok(inv);
         }
