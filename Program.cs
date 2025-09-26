@@ -17,10 +17,20 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddScoped<TokenService>();
 
-// DB - Connection string from env: ConnectionStrings__DefaultConnection
-var conn = builder.Configuration.GetConnectionString("DefaultConnection") 
+// DB - Connection string from env: ConnectionStrings__DefaultConnection or DATABASE_URL
+var conn = builder.Configuration.GetConnectionString("DefaultConnection")
            ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
-if (string.IsNullOrEmpty(conn)) 
+
+if (string.IsNullOrWhiteSpace(conn))
+{
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrWhiteSpace(databaseUrl))
+    {
+        conn = BuildConnectionStringFromUrl(databaseUrl);
+    }
+}
+
+if (string.IsNullOrWhiteSpace(conn))
 {
     // fallback local for development
     conn = "Host=localhost;Port=5432;Database=ecommercedb;Username=postgres;Password=postgres";
@@ -74,3 +84,25 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+static string BuildConnectionStringFromUrl(string databaseUrl)
+{
+    if (!Uri.TryCreate(databaseUrl, UriKind.Absolute, out var uri))
+    {
+        return databaseUrl;
+    }
+
+    var host = uri.Host;
+    var port = uri.IsDefaultPort ? 5432 : uri.Port;
+    var database = uri.AbsolutePath.Trim('/');
+
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+
+    var sslMode = uri.Scheme.StartsWith("postgres", StringComparison.OrdinalIgnoreCase)
+        ? "Require"
+        : "Disable";
+
+    return $"Host={host};Port={port};Database={database};Username={username};Password={password};Ssl Mode={sslMode};Trust Server Certificate=true";
+}
