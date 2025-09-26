@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using EcommerceBackend.Data;
@@ -35,7 +36,8 @@ namespace EcommerceBackend.Controllers
             if (password.Length < 6)
                 return BadRequest(new { error = "La contraseña debe tener al menos 6 caracteres" });
 
-            var normalizedEmail = NormalizeEmail(email);
+            var normalizedEmail = email.ToLowerInvariant();
+            var defaultRole = User.FindFirstValue(ClaimTypes.Role) ?? "customer";
 
             if (await _db.Users.AsNoTracking().AnyAsync(u => u.NormalizedEmail == normalizedEmail))
                 return Conflict(new { error = "El correo electrónico ya está registrado" });
@@ -47,8 +49,7 @@ namespace EcommerceBackend.Controllers
                 NormalizedEmail = normalizedEmail,
                 FullName = fullName,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                Role = User.DefaultRole,
-                CreatedAt = DateTime.UtcNow
+                Role = defaultRole
             };
 
             await _db.Users.AddAsync(user);
