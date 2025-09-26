@@ -13,7 +13,8 @@ namespace EcommerceBackend.Migrations
             if (migrationBuilder.ActiveProvider == "Npgsql.EntityFrameworkCore.PostgreSQL")
             {
                 migrationBuilder.Sql("ALTER TABLE \"Users\" ADD COLUMN IF NOT EXISTS \"NormalizedEmail\" text NOT NULL DEFAULT '';");
-                migrationBuilder.Sql("UPDATE \"Users\" SET \"NormalizedEmail\" = lower(\"Email\") WHERE COALESCE(\"NormalizedEmail\", '') = '';");
+                migrationBuilder.Sql("UPDATE \"Users\" SET \"NormalizedEmail\" = lower(trim(\"Email\")) WHERE COALESCE(\"NormalizedEmail\", '') = '' OR \"NormalizedEmail\" <> lower(trim(\"Email\"));");
+                migrationBuilder.Sql("ALTER TABLE \"Users\" ALTER COLUMN \"NormalizedEmail\" DROP DEFAULT;");
                 migrationBuilder.Sql("CREATE UNIQUE INDEX IF NOT EXISTS \"IX_Users_NormalizedEmail\" ON \"Users\" (\"NormalizedEmail\");");
             }
             else
@@ -25,7 +26,7 @@ namespace EcommerceBackend.Migrations
                     nullable: false,
                     defaultValue: "");
 
-                migrationBuilder.Sql("UPDATE \"Users\" SET \"NormalizedEmail\" = lower(\"Email\");");
+                migrationBuilder.Sql("UPDATE \"Users\" SET \"NormalizedEmail\" = lower(trim(\"Email\"));");
 
                 migrationBuilder.CreateIndex(
                     name: "IX_Users_NormalizedEmail",
