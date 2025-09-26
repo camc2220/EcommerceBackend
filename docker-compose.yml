@@ -13,7 +13,7 @@ services:
     depends_on: ['db']
     environment:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=ecommercedb;Username=postgres;Password=postgres
-      - Jwt__Key=DevelopmentJwtKey12345
+      - Jwt__Key=ChangeThisDevelopmentJwtKeyToBeSecure!
     ports: ['5000:5000']
   frontend:
     build:
