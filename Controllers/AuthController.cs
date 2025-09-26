@@ -96,7 +96,7 @@ namespace EcommerceBackend.Controllers
                 return Unauthorized(new { message = "Contraseña incorrecta" });
 
             var token = _tokenService.GenerateToken(user);
-            return Ok(new { token });
+            return Ok(new { message = "Inicio de sesión exitoso", token });
         }
 
         private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
