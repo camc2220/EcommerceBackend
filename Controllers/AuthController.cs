@@ -76,7 +76,7 @@ namespace EcommerceBackend.Controllers
             }
 
             var token = _tokenService.GenerateToken(user);
-            return Ok(new { token });
+            return Ok(new { message = "Usuario creado", token });
         }
 
         [HttpPost("login")]
