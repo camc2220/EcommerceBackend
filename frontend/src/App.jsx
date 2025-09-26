@@ -8,12 +8,22 @@ const initialFormState = {
   password: ''
 }
 
+const initialLoginFormState = {
+  email: '',
+  password: ''
+}
+
 export default function App() {
   const [products, setProducts] = useState([])
   const [registerForm, setRegisterForm] = useState(initialFormState)
   const [registerMessage, setRegisterMessage] = useState('')
   const [registerError, setRegisterError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loginForm, setLoginForm] = useState(initialLoginFormState)
+  const [loginMessage, setLoginMessage] = useState('')
+  const [loginError, setLoginError] = useState('')
+  const [loginToken, setLoginToken] = useState('')
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false)
 
   useEffect(() => {
     fetch(`${API_BASE}/products`)
@@ -25,6 +35,47 @@ export default function App() {
   const handleInputChange = event => {
     const { name, value } = event.target
     setRegisterForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleLoginInputChange = event => {
+    const { name, value } = event.target
+    setLoginForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleLogin = async event => {
+    event.preventDefault()
+    setLoginMessage('')
+    setLoginError('')
+    setLoginToken('')
+    setIsLoginSubmitting(true)
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: loginForm.email,
+          password: loginForm.password
+        })
+      })
+
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        setLoginError(data.message || 'No se pudo iniciar sesión.')
+        return
+      }
+
+      setLoginMessage(data.message || 'Inicio de sesión completado.')
+      if (data.token) {
+        setLoginToken(data.token)
+      }
+      setLoginForm(initialLoginFormState)
+    } catch (error) {
+      setLoginError('No se pudo conectar con el servidor.')
+    } finally {
+      setIsLoginSubmitting(false)
+    }
   }
 
   const handleRegister = async event => {
@@ -63,6 +114,67 @@ export default function App() {
   return (
     <div style={{ padding: 20, fontFamily: 'Arial', maxWidth: 960, margin: '0 auto' }}>
       <h1>E-commerce Demo</h1>
+
+      <section style={{ marginBottom: 32, padding: 20, border: '1px solid #ddd', borderRadius: 12 }}>
+        <h2>Iniciar sesión</h2>
+        <form onSubmit={handleLogin} style={{ display: 'grid', gap: 12, maxWidth: 400 }}>
+          <label style={{ display: 'grid', gap: 4 }}>
+            Correo electrónico
+            <input
+              type="email"
+              name="email"
+              value={loginForm.email}
+              onChange={handleLoginInputChange}
+              placeholder="ana@example.com"
+              required
+              style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
+            />
+          </label>
+
+          <label style={{ display: 'grid', gap: 4 }}>
+            Contraseña
+            <input
+              type="password"
+              name="password"
+              value={loginForm.password}
+              onChange={handleLoginInputChange}
+              placeholder="Tu contraseña"
+              required
+              style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={isLoginSubmitting}
+            style={{
+              padding: '10px 16px',
+              borderRadius: 6,
+              border: 'none',
+              background: '#0d6efd',
+              color: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            {isLoginSubmitting ? 'Iniciando sesión…' : 'Entrar'}
+          </button>
+        </form>
+
+        {loginError && (
+          <p style={{ color: '#b91c1c', marginTop: 16 }}>{loginError}</p>
+        )}
+
+        {loginMessage && (
+          <div style={{ color: '#047857', marginTop: 16, display: 'grid', gap: 8 }}>
+            <p>{loginMessage}</p>
+            {loginToken && (
+              <code style={{ display: 'block', wordBreak: 'break-all', background: '#f3f4f6', padding: 8, borderRadius: 6 }}>
+                {loginToken}
+              </code>
+            )}
+          </div>
+        )}
+      </section>
 
       <section style={{ marginBottom: 32, padding: 20, border: '1px solid #ddd', borderRadius: 12 }}>
         <h2>Crear cuenta</h2>
