@@ -60,7 +60,10 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty; 
 });
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthentication();
 app.UseAuthorization();
 
