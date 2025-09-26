@@ -70,7 +70,21 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    await db.Database.MigrateAsync();
+
+    var usersWithoutNormalizedEmail = await db.Users
+        .Where(u => string.IsNullOrWhiteSpace(u.NormalizedEmail) && !string.IsNullOrWhiteSpace(u.Email))
+        .ToListAsync();
+
+    if (usersWithoutNormalizedEmail.Count > 0)
+    {
+        foreach (var user in usersWithoutNormalizedEmail)
+        {
+            user.NormalizedEmail = user.Email.ToLowerInvariant();
+        }
+
+        await db.SaveChangesAsync();
+    }
 }
 
 app.Run();
