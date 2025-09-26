@@ -28,12 +28,20 @@ if (string.IsNullOrEmpty(conn))
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(conn));
 
 // JWT
+var jwtKey = builder.Configuration["Jwt:Key"]
+              ?? Environment.GetEnvironmentVariable("Jwt__Key")
+              ?? "development-secret-key-change-me";
+
+if (jwtKey.Length < 16)
+{
+    throw new InvalidOperationException(
+        "JWT key must be at least 16 characters long. Set Jwt:Key/Jwt__Key to a secure value.");
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var key = builder.Configuration["Jwt:Key"] 
-                  ?? Environment.GetEnvironmentVariable("Jwt__Key") 
-                  ?? "devkey";
+        var key = jwtKey;
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
