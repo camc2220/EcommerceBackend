@@ -1,3 +1,6 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using EcommerceBackend.Models;
 using BCrypt.Net;
@@ -14,6 +17,18 @@ namespace EcommerceBackend.Data
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoiceItem> InvoiceItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
+
+        public override int SaveChanges()
+        {
+            NormalizeUserEmails();
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            NormalizeUserEmails();
+            return base.SaveChangesAsync(cancellationToken);
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -130,6 +145,26 @@ namespace EcommerceBackend.Data
                     CreatedAt = DateTime.UtcNow
                 }
             );
+        }
+
+        private void NormalizeUserEmails()
+        {
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries<User>())
+            {
+                if (entry.State != EntityState.Added && entry.State != EntityState.Modified)
+                    continue;
+
+                var email = (entry.Entity.Email ?? string.Empty).Trim();
+                entry.Entity.Email = email;
+                entry.Entity.NormalizedEmail = email.ToLowerInvariant();
+
+                if (entry.State == EntityState.Added && entry.Entity.CreatedAt == default)
+                {
+                    entry.Entity.CreatedAt = now;
+                }
+            }
         }
     }
 }
