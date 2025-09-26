@@ -1,10 +1,11 @@
+using EcommerceBackend.Data;
+using EcommerceBackend.Services;
+using EcommerceBackend.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using EcommerceBackend.Data;
-using EcommerceBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,9 +32,7 @@ builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(conn));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var key = builder.Configuration["Jwt:Key"] 
-                  ?? Environment.GetEnvironmentVariable("Jwt__Key") 
-                  ?? "devkey";
+        var signingKey = JwtKeyProvider.GetSigningKey(builder.Configuration);
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -41,7 +40,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey))
         };
     });
 

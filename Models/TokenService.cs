@@ -1,9 +1,9 @@
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using EcommerceBackend.Models;
+using EcommerceBackend.Security;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace EcommerceBackend.Services
 {
@@ -21,9 +21,8 @@ namespace EcommerceBackend.Services
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? Environment.GetEnvironmentVariable("Jwt__Key") ?? "devkey")
-            );
+            var signingKey = JwtKeyProvider.GetSigningKey(_config);
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
