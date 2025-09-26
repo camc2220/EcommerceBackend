@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -13,112 +13,198 @@ namespace EcommerceBackend.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "CartItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CartItems", x => x.Id);
-                });
+            if (migrationBuilder.ActiveProvider == "Npgsql.EntityFrameworkCore.PostgreSQL")
+            {
+                migrationBuilder.Sql(@"
+                    CREATE TABLE IF NOT EXISTS \"Users\" (
+                        \"Id\" uuid PRIMARY KEY,
+                        \"Email\" text NOT NULL,
+                        \"PasswordHash\" text NOT NULL,
+                        \"FullName\" text NULL,
+                        \"Role\" text NOT NULL,
+                        \"CreatedAt\" timestamptz NOT NULL
+                    );
+                ");
 
-            migrationBuilder.CreateTable(
-                name: "Invoices",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    InvoiceNumber = table.Column<string>(type: "text", nullable: false),
-                    Total = table.Column<decimal>(type: "numeric", nullable: false),
-                    Tax = table.Column<decimal>(type: "numeric", nullable: false),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    BillingAddress = table.Column<string>(type: "text", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Invoices", x => x.Id);
-                });
+                migrationBuilder.Sql(@"
+                    CREATE TABLE IF NOT EXISTS \"Products\" (
+                        \"Id\" uuid PRIMARY KEY,
+                        \"Name\" text NOT NULL,
+                        \"Description\" text NULL,
+                        \"Price\" numeric NOT NULL,
+                        \"Stock\" integer NOT NULL,
+                        \"Category\" text NULL,
+                        \"ImageUrl\" text NULL,
+                        \"CreatedAt\" timestamptz NOT NULL
+                    );
+                ");
 
-            migrationBuilder.CreateTable(
-                name: "Payments",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Provider = table.Column<string>(type: "text", nullable: true),
-                    ProviderPaymentId = table.Column<string>(type: "text", nullable: true),
-                    Amount = table.Column<decimal>(type: "numeric", nullable: false),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Payments", x => x.Id);
-                });
+                migrationBuilder.Sql(@"
+                    CREATE TABLE IF NOT EXISTS \"Invoices\" (
+                        \"Id\" uuid PRIMARY KEY,
+                        \"UserId\" uuid NOT NULL,
+                        \"InvoiceNumber\" text NOT NULL,
+                        \"Total\" numeric NOT NULL,
+                        \"Tax\" numeric NOT NULL,
+                        \"Status\" text NOT NULL,
+                        \"CreatedAt\" timestamptz NOT NULL,
+                        \"PaidAt\" timestamptz NULL,
+                        \"BillingAddress\" text NULL
+                    );
+                ");
 
-            migrationBuilder.CreateTable(
-                name: "Products",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    Price = table.Column<decimal>(type: "numeric", nullable: false),
-                    Stock = table.Column<int>(type: "integer", nullable: false),
-                    Category = table.Column<string>(type: "text", nullable: true),
-                    ImageUrl = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Products", x => x.Id);
-                });
+                migrationBuilder.Sql(@"
+                    CREATE TABLE IF NOT EXISTS \"Payments\" (
+                        \"Id\" uuid PRIMARY KEY,
+                        \"InvoiceId\" uuid NOT NULL,
+                        \"Provider\" text NULL,
+                        \"ProviderPaymentId\" text NULL,
+                        \"Amount\" numeric NOT NULL,
+                        \"Status\" text NOT NULL,
+                        \"CreatedAt\" timestamptz NOT NULL
+                    );
+                ");
 
-            migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Email = table.Column<string>(type: "text", nullable: false),
-                    PasswordHash = table.Column<string>(type: "text", nullable: false),
-                    FullName = table.Column<string>(type: "text", nullable: true),
-                    Role = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.Id);
-                });
+                migrationBuilder.Sql(@"
+                    CREATE TABLE IF NOT EXISTS \"CartItems\" (
+                        \"Id\" uuid PRIMARY KEY,
+                        \"UserId\" uuid NOT NULL,
+                        \"ProductId\" uuid NOT NULL,
+                        \"Quantity\" integer NOT NULL,
+                        \"CreatedAt\" timestamptz NOT NULL
+                    );
+                ");
 
-            migrationBuilder.CreateTable(
-                name: "InvoiceItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "numeric", nullable: false),
-                    LineTotal = table.Column<decimal>(type: "numeric", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_InvoiceItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_InvoiceItems_Invoices_InvoiceId",
-                        column: x => x.InvoiceId,
-                        principalTable: "Invoices",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                migrationBuilder.Sql(@"
+                    CREATE TABLE IF NOT EXISTS \"InvoiceItems\" (
+                        \"Id\" uuid PRIMARY KEY,
+                        \"InvoiceId\" uuid NOT NULL,
+                        \"ProductId\" uuid NOT NULL,
+                        \"Quantity\" integer NOT NULL,
+                        \"UnitPrice\" numeric NOT NULL,
+                        \"LineTotal\" numeric NOT NULL,
+                        CONSTRAINT \"FK_InvoiceItems_Invoices_InvoiceId\" FOREIGN KEY (\"InvoiceId\") REFERENCES \"Invoices\" (\"Id\") ON DELETE CASCADE
+                    );
+                ");
+
+                migrationBuilder.Sql(@"
+                    CREATE INDEX IF NOT EXISTS \"IX_InvoiceItems_InvoiceId\" ON \"InvoiceItems\" (\"InvoiceId\");
+                ");
+            }
+            else
+            {
+                migrationBuilder.CreateTable(
+                    name: "CartItems",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "uuid", nullable: false),
+                        UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                        ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                        Quantity = table.Column<int>(type: "integer", nullable: false),
+                        CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_CartItems", x => x.Id);
+                    });
+
+                migrationBuilder.CreateTable(
+                    name: "Invoices",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "uuid", nullable: false),
+                        UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                        InvoiceNumber = table.Column<string>(type: "text", nullable: false),
+                        Total = table.Column<decimal>(type: "numeric", nullable: false),
+                        Tax = table.Column<decimal>(type: "numeric", nullable: false),
+                        Status = table.Column<string>(type: "text", nullable: false),
+                        CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                        PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                        BillingAddress = table.Column<string>(type: "text", nullable: true)
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_Invoices", x => x.Id);
+                    });
+
+                migrationBuilder.CreateTable(
+                    name: "Payments",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "uuid", nullable: false),
+                        InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
+                        Provider = table.Column<string>(type: "text", nullable: true),
+                        ProviderPaymentId = table.Column<string>(type: "text", nullable: true),
+                        Amount = table.Column<decimal>(type: "numeric", nullable: false),
+                        Status = table.Column<string>(type: "text", nullable: false),
+                        CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_Payments", x => x.Id);
+                    });
+
+                migrationBuilder.CreateTable(
+                    name: "Products",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "uuid", nullable: false),
+                        Name = table.Column<string>(type: "text", nullable: false),
+                        Description = table.Column<string>(type: "text", nullable: true),
+                        Price = table.Column<decimal>(type: "numeric", nullable: false),
+                        Stock = table.Column<int>(type: "integer", nullable: false),
+                        Category = table.Column<string>(type: "text", nullable: true),
+                        ImageUrl = table.Column<string>(type: "text", nullable: true),
+                        CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_Products", x => x.Id);
+                    });
+
+                migrationBuilder.CreateTable(
+                    name: "Users",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "uuid", nullable: false),
+                        Email = table.Column<string>(type: "text", nullable: false),
+                        PasswordHash = table.Column<string>(type: "text", nullable: false),
+                        FullName = table.Column<string>(type: "text", nullable: true),
+                        Role = table.Column<string>(type: "text", nullable: false),
+                        CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_Users", x => x.Id);
+                    });
+
+                migrationBuilder.CreateTable(
+                    name: "InvoiceItems",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "uuid", nullable: false),
+                        InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
+                        ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                        Quantity = table.Column<int>(type: "integer", nullable: false),
+                        UnitPrice = table.Column<decimal>(type: "numeric", nullable: false),
+                        LineTotal = table.Column<decimal>(type: "numeric", nullable: false)
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_InvoiceItems", x => x.Id);
+                        table.ForeignKey(
+                            name: "FK_InvoiceItems_Invoices_InvoiceId",
+                            column: x => x.InvoiceId,
+                            principalTable: "Invoices",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade);
+                    });
+
+                migrationBuilder.CreateIndex(
+                    name: "IX_InvoiceItems_InvoiceId",
+                    table: "InvoiceItems",
+                    column: "InvoiceId");
+            }
 
             migrationBuilder.InsertData(
                 table: "CartItems",
@@ -157,33 +243,41 @@ namespace EcommerceBackend.Migrations
                 table: "InvoiceItems",
                 columns: new[] { "Id", "InvoiceId", "LineTotal", "ProductId", "Quantity", "UnitPrice" },
                 values: new object[] { new Guid("c8633a68-aea5-4904-a9b5-5a15de248cc4"), new Guid("d30b0c2c-d81c-4268-b9ff-1fcaebdb4006"), 70m, new Guid("0dd2df11-f26b-4b0a-bd2a-eb9f1c1f94f6"), 2, 35m });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InvoiceItems_InvoiceId",
-                table: "InvoiceItems",
-                column: "InvoiceId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "CartItems");
+            if (migrationBuilder.ActiveProvider == "Npgsql.EntityFrameworkCore.PostgreSQL")
+            {
+                migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_InvoiceItems_InvoiceId\";");
+                migrationBuilder.Sql("DROP TABLE IF EXISTS \"CartItems\" CASCADE;");
+                migrationBuilder.Sql("DROP TABLE IF EXISTS \"InvoiceItems\" CASCADE;");
+                migrationBuilder.Sql("DROP TABLE IF EXISTS \"Payments\" CASCADE;");
+                migrationBuilder.Sql("DROP TABLE IF EXISTS \"Products\" CASCADE;");
+                migrationBuilder.Sql("DROP TABLE IF EXISTS \"Users\" CASCADE;");
+                migrationBuilder.Sql("DROP TABLE IF EXISTS \"Invoices\" CASCADE;");
+            }
+            else
+            {
+                migrationBuilder.DropTable(
+                    name: "CartItems");
 
-            migrationBuilder.DropTable(
-                name: "InvoiceItems");
+                migrationBuilder.DropTable(
+                    name: "InvoiceItems");
 
-            migrationBuilder.DropTable(
-                name: "Payments");
+                migrationBuilder.DropTable(
+                    name: "Payments");
 
-            migrationBuilder.DropTable(
-                name: "Products");
+                migrationBuilder.DropTable(
+                    name: "Products");
 
-            migrationBuilder.DropTable(
-                name: "Users");
+                migrationBuilder.DropTable(
+                    name: "Users");
 
-            migrationBuilder.DropTable(
-                name: "Invoices");
+                migrationBuilder.DropTable(
+                    name: "Invoices");
+            }
         }
     }
 }
