@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -34,17 +35,20 @@ namespace EcommerceBackend.Controllers
             if (password.Length < 6)
                 return BadRequest(new { error = "La contraseña debe tener al menos 6 caracteres" });
 
-            var normalizedEmail = email.ToLowerInvariant();
+            var normalizedEmail = NormalizeEmail(email);
 
             if (await _db.Users.AsNoTracking().AnyAsync(u => u.NormalizedEmail == normalizedEmail))
                 return Conflict(new { error = "El correo electrónico ya está registrado" });
 
             var user = new User
             {
+                Id = Guid.NewGuid(),
                 Email = email,
                 NormalizedEmail = normalizedEmail,
                 FullName = fullName,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                Role = User.DefaultRole,
+                CreatedAt = DateTime.UtcNow
             };
 
             await _db.Users.AddAsync(user);
@@ -74,7 +78,7 @@ namespace EcommerceBackend.Controllers
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                 return BadRequest(new { message = "Correo y contraseña son obligatorios" });
 
-            var normalizedEmail = email.ToLowerInvariant();
+            var normalizedEmail = NormalizeEmail(email);
 
             var user = await _db.Users.AsNoTracking()
                 .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
@@ -87,6 +91,8 @@ namespace EcommerceBackend.Controllers
             var token = _tokenService.GenerateToken(user);
             return Ok(new { token });
         }
+
+        private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
     }
 
     public class RegisterDto
