@@ -18,26 +18,40 @@ namespace EcommerceBackend.Controllers
         private readonly AppDbContext _db;
         public CartController(AppDbContext db) => _db = db;
 
-        private Guid UserId => Guid.Parse(User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub));
+        private bool TryGetUserId(out Guid userId)
+        {
+            userId = Guid.Empty;
+            var subject = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+            return !string.IsNullOrWhiteSpace(subject) && Guid.TryParse(subject, out userId);
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetCart()
         {
-            var items = await _db.CartItems.Where(c => c.UserId == UserId).ToListAsync();
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var items = await _db.CartItems.Where(c => c.UserId == userId).ToListAsync();
             return Ok(items);
         }
 
         [HttpPost("add")]
         public async Task<IActionResult> AddToCart([FromBody] AddDto dto)
         {
-            var existing = await _db.CartItems.SingleOrDefaultAsync(c => c.UserId == UserId && c.ProductId == dto.ProductId);
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            if (dto.Quantity <= 0)
+                return BadRequest(new { error = "Quantity must be greater than zero." });
+
+            var existing = await _db.CartItems.SingleOrDefaultAsync(c => c.UserId == userId && c.ProductId == dto.ProductId);
             if (existing != null)
             {
                 existing.Quantity += dto.Quantity;
             }
             else
             {
-                _db.CartItems.Add(new CartItem { UserId = UserId, ProductId = dto.ProductId, Quantity = dto.Quantity });
+                _db.CartItems.Add(new CartItem { UserId = userId, ProductId = dto.ProductId, Quantity = dto.Quantity });
             }
             await _db.SaveChangesAsync();
             return Ok();
@@ -46,11 +60,14 @@ namespace EcommerceBackend.Controllers
         [HttpPost("checkout")]
         public async Task<IActionResult> Checkout([FromBody] CheckoutDto dto)
         {
-            var items = await _db.CartItems.Where(c => c.UserId == UserId).ToListAsync();
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var items = await _db.CartItems.Where(c => c.UserId == userId).ToListAsync();
             if (items.Count == 0) return BadRequest(new { error = "Cart is empty" });
 
             decimal total = 0m;
-            var invoice = new Invoice { UserId = UserId, InvoiceNumber = "INV-" + Guid.NewGuid().ToString().Substring(0,8), Status = "Paid", BillingAddress = dto.BillingAddress };
+            var invoice = new Invoice { UserId = userId, InvoiceNumber = "INV-" + Guid.NewGuid().ToString().Substring(0,8), Status = "Paid", BillingAddress = dto.BillingAddress };
             _db.Invoices.Add(invoice);
             await _db.SaveChangesAsync();
 
