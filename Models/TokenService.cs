@@ -14,11 +14,13 @@ namespace EcommerceBackend.Services
 
         public string GenerateToken(User user)
         {
+            var role = string.IsNullOrWhiteSpace(user.Role) ? "customer" : user.Role;
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Role, role)
             };
 
             var key = new SymmetricSecurityKey(
