@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using EcommerceBackend.Data;
 using EcommerceBackend.Models;
 using EcommerceBackend.Services;
-using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcommerceBackend.Controllers
@@ -25,28 +24,42 @@ namespace EcommerceBackend.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var email = (dto.Email ?? string.Empty).Trim();
+            var password = (dto.Password ?? string.Empty).Trim();
+            var fullName = string.IsNullOrWhiteSpace(dto.FullName) ? null : dto.FullName.Trim();
 
-            var email = dto.Email.Trim();
+            if (string.IsNullOrWhiteSpace(email) || !new EmailAddressAttribute().IsValid(email))
+                return BadRequest(new { error = "Correo electrónico inválido" });
+
+            if (password.Length < 6)
+                return BadRequest(new { error = "La contraseña debe tener al menos 6 caracteres" });
+
             var normalizedEmail = email.ToLowerInvariant();
 
             if (await _db.Users.AsNoTracking().AnyAsync(u => u.NormalizedEmail == normalizedEmail))
-                return BadRequest(new { error = "Email already registered" });
-
-            var password = (dto.Password ?? string.Empty).Trim();
-            if (password.Length < 6)
-                return BadRequest(new { error = "La contraseña debe tener al menos 6 caracteres" });
+                return Conflict(new { error = "El correo electrónico ya está registrado" });
 
             var user = new User
             {
                 Email = email,
                 NormalizedEmail = normalizedEmail,
-                FullName = string.IsNullOrWhiteSpace(dto.FullName) ? null : dto.FullName.Trim(),
+                FullName = fullName,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
             };
+
             await _db.Users.AddAsync(user);
-            await _db.SaveChangesAsync();
+
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                if (await _db.Users.AsNoTracking().AnyAsync(u => u.NormalizedEmail == normalizedEmail))
+                    return Conflict(new { error = "El correo electrónico ya está registrado" });
+
+                throw;
+            }
 
             var token = _tokenService.GenerateToken(user);
             return Ok(new { token });
@@ -55,10 +68,12 @@ namespace EcommerceBackend.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var email = (dto.Email ?? string.Empty).Trim();
+            var password = (dto.Password ?? string.Empty).Trim();
 
-            var email = dto.Email.Trim();
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                return BadRequest(new { message = "Correo y contraseña son obligatorios" });
+
             var normalizedEmail = email.ToLowerInvariant();
 
             var user = await _db.Users.AsNoTracking()
@@ -66,9 +81,7 @@ namespace EcommerceBackend.Controllers
             if (user == null)
                 return Unauthorized(new { message = "Usuario no encontrado" });
 
-            var password = (dto.Password ?? string.Empty).Trim();
-
-            if (password.Length == 0 || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 return Unauthorized(new { message = "Contraseña incorrecta" });
 
             var token = _tokenService.GenerateToken(user);

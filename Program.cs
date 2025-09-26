@@ -66,11 +66,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Ensure DB created (tables only)
+// Ensure the latest migrations are applied automatically
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 }
 
 app.Run();
