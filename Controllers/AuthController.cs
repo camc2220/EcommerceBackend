@@ -24,8 +24,11 @@ namespace EcommerceBackend.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterDto? dto)
         {
+            if (dto == null)
+                return BadRequest(new { error = "Solicitud inválida" });
+
             var email = (dto.Email ?? string.Empty).Trim();
             var password = (dto.Password ?? string.Empty).Trim();
             var fullName = string.IsNullOrWhiteSpace(dto.FullName) ? null : dto.FullName.Trim();
@@ -71,8 +74,11 @@ namespace EcommerceBackend.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginDto? dto)
         {
+            if (dto == null)
+                return BadRequest(new { message = "Solicitud inválida" });
+
             var email = (dto.Email ?? string.Empty).Trim();
             var password = (dto.Password ?? string.Empty).Trim();
 
