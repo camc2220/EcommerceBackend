@@ -42,8 +42,11 @@ namespace EcommerceBackend.Controllers
             var normalizedEmail = email.ToLowerInvariant();
             var defaultRole = User.FindFirstValue(ClaimTypes.Role) ?? "customer";
 
-            if (await _db.Users.AsNoTracking().AnyAsync(u => u.NormalizedEmail == normalizedEmail))
+            if (await EmailAlreadyExistsAsync(normalizedEmail))
+            {
+                await EnsureNormalizedEmailAsync(normalizedEmail);
                 return Conflict(new { error = "El correo electrónico ya está registrado" });
+            }
 
             var user = new User
             {
@@ -63,8 +66,11 @@ namespace EcommerceBackend.Controllers
             }
             catch (DbUpdateException)
             {
-                if (await _db.Users.AsNoTracking().AnyAsync(u => u.NormalizedEmail == normalizedEmail))
+                if (await EmailAlreadyExistsAsync(normalizedEmail))
+                {
+                    await EnsureNormalizedEmailAsync(normalizedEmail);
                     return Conflict(new { error = "El correo electrónico ya está registrado" });
+                }
 
                 throw;
             }
@@ -85,12 +91,17 @@ namespace EcommerceBackend.Controllers
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                 return BadRequest(new { message = "Correo y contraseña son obligatorios" });
 
-            var normalizedEmail = NormalizeEmail(email);
+            var normalizedEmail = email.ToLowerInvariant();
 
-            var user = await _db.Users.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
+            var user = await FindUserForAuthAsync(normalizedEmail);
             if (user == null)
                 return Unauthorized(new { message = "Usuario no encontrado" });
+
+            if (string.IsNullOrWhiteSpace(user.NormalizedEmail))
+            {
+                user.NormalizedEmail = normalizedEmail;
+                await _db.SaveChangesAsync();
+            }
 
             if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 return Unauthorized(new { message = "Contraseña incorrecta" });
@@ -99,7 +110,33 @@ namespace EcommerceBackend.Controllers
             return Ok(new { token });
         }
 
-        private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
+        private Task<bool> EmailAlreadyExistsAsync(string normalizedEmail)
+        {
+            return _db.Users.AsNoTracking().AnyAsync(u =>
+                u.NormalizedEmail == normalizedEmail ||
+                u.Email.ToLower() == normalizedEmail);
+        }
+
+        private Task<User?> FindUserForAuthAsync(string normalizedEmail)
+        {
+            return _db.Users.FirstOrDefaultAsync(u =>
+                u.NormalizedEmail == normalizedEmail ||
+                u.Email.ToLower() == normalizedEmail);
+        }
+
+        private async Task EnsureNormalizedEmailAsync(string normalizedEmail)
+        {
+            var existingUser = await _db.Users
+                .FirstOrDefaultAsync(u =>
+                    u.Email.ToLower() == normalizedEmail &&
+                    string.IsNullOrWhiteSpace(u.NormalizedEmail));
+
+            if (existingUser != null)
+            {
+                existingUser.NormalizedEmail = normalizedEmail;
+                await _db.SaveChangesAsync();
+            }
+        }
     }
 
     public class RegisterDto
