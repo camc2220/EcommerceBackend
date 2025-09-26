@@ -206,13 +206,15 @@ namespace EcommerceBackend.Migrations
                     column: "InvoiceId");
             }
 
+            var seedTimestamp = new DateTime(2025, 9, 21, 2, 19, 46, DateTimeKind.Utc);
+
             migrationBuilder.InsertData(
                 table: "CartItems",
                 columns: new[] { "Id", "CreatedAt", "ProductId", "Quantity", "UserId" },
                 values: new object[]
                 {
                     new Guid("1e8537ac-5a83-4f32-9ba5-248358dae55a"),
-                    new DateTime(2025, 9, 21, 2, 19, 46, 692, DateTimeKind.Utc).AddTicks(4192),
+                    seedTimestamp,
                     new Guid("0dd2df11-f26b-4b0a-bd2a-eb9f1c1f94f6"),
                     2,
                     new Guid("d60ec960-bc53-424a-9128-5275fbd4969f")
@@ -225,9 +227,9 @@ namespace EcommerceBackend.Migrations
                 {
                     new Guid("d30b0c2c-d81c-4268-b9ff-1fcaebdb4006"),
                     "Calle Falsa 123",
-                    new DateTime(2025, 9, 21, 2, 19, 46, 692, DateTimeKind.Utc).AddTicks(4258),
+                    seedTimestamp,
                     "INV-001",
-                    new DateTime(2025, 9, 21, 2, 19, 46, 692, DateTimeKind.Utc).AddTicks(4267),
+                    seedTimestamp,
                     "Paid",
                     0m,
                     70m,
@@ -241,7 +243,7 @@ namespace EcommerceBackend.Migrations
                 {
                     new Guid("cb361e92-3347-46f6-8568-8c1671dfbd8d"),
                     70m,
-                    new DateTime(2025, 9, 21, 2, 19, 46, 692, DateTimeKind.Utc).AddTicks(4383),
+                    seedTimestamp,
                     new Guid("d30b0c2c-d81c-4268-b9ff-1fcaebdb4006"),
                     "Stripe",
                     "pay_001",
@@ -256,7 +258,7 @@ namespace EcommerceBackend.Migrations
                     {
                         new Guid("0dd2df11-f26b-4b0a-bd2a-eb9f1c1f94f6"),
                         "Accesorios",
-                        new DateTime(2025, 9, 21, 2, 19, 46, 692, DateTimeKind.Utc).AddTicks(4106),
+                        seedTimestamp,
                         "Mouse Bluetooth ergonómico",
                         string.Empty,
                         "Mouse Inalámbrico",
@@ -266,7 +268,7 @@ namespace EcommerceBackend.Migrations
                     {
                         new Guid("488e5e0f-e6eb-44a3-a587-9c3e5f6c5e7b"),
                         "Electrónica",
-                        new DateTime(2025, 9, 21, 2, 19, 46, 692, DateTimeKind.Utc).AddTicks(4094),
+                        seedTimestamp,
                         "Laptop potente para gaming",
                         string.Empty,
                         "Laptop Gamer",
@@ -282,7 +284,7 @@ namespace EcommerceBackend.Migrations
                 {
                     {
                         new Guid("89b8105d-38e1-4849-abe3-d7c20b99d8a4"),
-                        new DateTime(2025, 9, 21, 2, 19, 46, 202, DateTimeKind.Utc).AddTicks(1762),
+                        seedTimestamp,
                         "admin@ecommerce.com",
                         "Admin",
                         "$2a$11$a4XTN3Qs2Pls1KQrRWDlNOEEOLNW5Tn9lUHGYAl0wlgg5cYmHT4f.",
@@ -290,7 +292,7 @@ namespace EcommerceBackend.Migrations
                     },
                     {
                         new Guid("d60ec960-bc53-424a-9128-5275fbd4969f"),
-                        new DateTime(2025, 9, 21, 2, 19, 46, 468, DateTimeKind.Utc).AddTicks(7329),
+                        seedTimestamp,
                         "user@ecommerce.com",
                         "Usuario Test",
                         "$2a$11$SBZkm5ho6nodxsu1bjQYKeV5rUlWPqwLMxNYvvSZtEkJRD4uHrSjm",
