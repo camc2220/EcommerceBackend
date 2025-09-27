@@ -82,43 +82,12 @@ namespace EcommerceBackend.Controllers
             return Ok();
         }
 
-<<<<<<< HEAD
-        [HttpDelete("item/{productId:guid}")]
-        public async Task<IActionResult> RemoveItem(Guid productId)
-=======
         [HttpPut("quantity")]
         public async Task<IActionResult> UpdateQuantity([FromBody] UpdateQuantityDto dto)
->>>>>>> origin/codex/add-endpoint-to-update-cart-item-quantity
         {
             if (!TryGetUserId(out var userId))
                 return Unauthorized();
 
-<<<<<<< HEAD
-            var existing = await _db.CartItems.SingleOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
-            if (existing == null)
-                return NotFound();
-
-            _db.CartItems.Remove(existing);
-            await _db.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        [HttpDelete("clear")]
-        public async Task<IActionResult> ClearCart()
-        {
-            if (!TryGetUserId(out var userId))
-                return Unauthorized();
-
-            var items = await _db.CartItems.Where(c => c.UserId == userId).ToListAsync();
-            if (items.Count == 0)
-                return NoContent();
-
-            _db.CartItems.RemoveRange(items);
-            await _db.SaveChangesAsync();
-
-            return NoContent();
-=======
             if (dto.Quantity <= 0)
                 return BadRequest(new { error = "Quantity must be greater than zero." });
 
@@ -129,7 +98,6 @@ namespace EcommerceBackend.Controllers
             item.Quantity = dto.Quantity;
             await _db.SaveChangesAsync();
             return Ok(item);
->>>>>>> origin/codex/add-endpoint-to-update-cart-item-quantity
         }
 
         [HttpPost("checkout")]
