@@ -41,10 +41,10 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["Jwt:Key"]))
     builder.Configuration["Jwt:Key"] = jwtKey;
 }
 
-if (jwtKey.Length < 16)
+if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
 {
     throw new InvalidOperationException(
-        "JWT key must be at least 16 characters long. Set Jwt:Key/Jwt__Key to a secure value.");
+        "JWT key must be at least 32 bytes long. Set Jwt:Key/Jwt__Key to a secure value.");
 }
 
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
