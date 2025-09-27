@@ -57,6 +57,24 @@ namespace EcommerceBackend.Controllers
             return Ok();
         }
 
+        [HttpPut("quantity")]
+        public async Task<IActionResult> UpdateQuantity([FromBody] UpdateQuantityDto dto)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            if (dto.Quantity <= 0)
+                return BadRequest(new { error = "Quantity must be greater than zero." });
+
+            var item = await _db.CartItems.SingleOrDefaultAsync(c => c.UserId == userId && c.ProductId == dto.ProductId);
+            if (item == null)
+                return NotFound();
+
+            item.Quantity = dto.Quantity;
+            await _db.SaveChangesAsync();
+            return Ok(item);
+        }
+
         [HttpPost("checkout")]
         public async Task<IActionResult> Checkout([FromBody] CheckoutDto dto)
         {
@@ -90,5 +108,6 @@ namespace EcommerceBackend.Controllers
     }
 
     public class AddDto { public Guid ProductId { get; set; } public int Quantity { get; set; } }
+    public class UpdateQuantityDto { public Guid ProductId { get; set; } public int Quantity { get; set; } }
     public class CheckoutDto { public string BillingAddress { get; set; } = string.Empty; }
 }
