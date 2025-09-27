@@ -100,6 +100,33 @@ namespace EcommerceBackend.Controllers
             return Ok(item);
         }
 
+        [HttpPatch("items/{cartItemId:guid}/quantity")]
+        public async Task<IActionResult> UpdateCartItemQuantity(Guid cartItemId, [FromBody] UpdateCartItemQuantityRequest dto)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            if (dto == null)
+                return BadRequest(new { error = "Request body is required." });
+
+            if (dto.Quantity <= 0)
+                return BadRequest(new { error = "Quantity must be greater than zero." });
+
+            var item = await _db.CartItems.SingleOrDefaultAsync(c => c.UserId == userId && c.Id == cartItemId);
+            if (item == null)
+                return NotFound();
+
+            item.Quantity = dto.Quantity;
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                item.Id,
+                item.ProductId,
+                item.Quantity
+            });
+        }
+
         [HttpPost("checkout")]
         public async Task<IActionResult> Checkout([FromBody] CheckoutDto dto)
         {
@@ -135,6 +162,7 @@ namespace EcommerceBackend.Controllers
     public class AddDto { public Guid ProductId { get; set; } public int Quantity { get; set; } }
     public class UpdateQuantityDto { public Guid ProductId { get; set; } public int Quantity { get; set; } }
     public class CheckoutDto { public string BillingAddress { get; set; } = string.Empty; }
+    public class UpdateCartItemQuantityRequest { public int Quantity { get; set; } }
     public class CartItemResponseDto
     {
         public Guid CartItemId { get; set; }
