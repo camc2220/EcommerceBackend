@@ -127,6 +127,22 @@ namespace EcommerceBackend.Controllers
             });
         }
 
+        [HttpDelete("items/{cartItemId:guid}")]
+        public async Task<IActionResult> RemoveCartItem(Guid cartItemId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var item = await _db.CartItems.SingleOrDefaultAsync(c => c.UserId == userId && c.Id == cartItemId);
+            if (item == null)
+                return NotFound();
+
+            _db.CartItems.Remove(item);
+            await _db.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         [HttpPost("checkout")]
         public async Task<IActionResult> Checkout([FromBody] CheckoutDto dto)
         {
