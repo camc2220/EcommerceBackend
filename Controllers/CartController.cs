@@ -21,7 +21,8 @@ namespace EcommerceBackend.Controllers
         private bool TryGetUserId(out Guid userId)
         {
             userId = Guid.Empty;
-            var subject = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+            var subject = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
             return !string.IsNullOrWhiteSpace(subject) && Guid.TryParse(subject, out userId);
         }
 
