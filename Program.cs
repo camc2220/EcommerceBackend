@@ -24,29 +24,7 @@ var conn = ConnectionStringResolver.Resolve(builder.Configuration);
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(conn));
 
 // JWT
-var jwtKey = builder.Configuration["Jwt:Key"];
-
-if (string.IsNullOrWhiteSpace(jwtKey))
-{
-    jwtKey = Environment.GetEnvironmentVariable("Jwt__Key");
-}
-
-if (string.IsNullOrWhiteSpace(jwtKey))
-{
-    jwtKey = JwtKeyProvider.DevelopmentFallbackKey;
-}
-
-if (string.IsNullOrWhiteSpace(builder.Configuration["Jwt:Key"]))
-{
-    builder.Configuration["Jwt:Key"] = jwtKey;
-}
-
-if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
-{
-    throw new InvalidOperationException(
-        "JWT key must be at least 32 bytes long. Set Jwt:Key/Jwt__Key to a secure value.");
-}
-
+var jwtKey = JwtKeyProvider.GetSigningKey(builder.Configuration);
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
