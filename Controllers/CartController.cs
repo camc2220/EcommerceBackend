@@ -32,7 +32,31 @@ namespace EcommerceBackend.Controllers
             if (!TryGetUserId(out var userId))
                 return Unauthorized();
 
-            var items = await _db.CartItems.Where(c => c.UserId == userId).ToListAsync();
+            var items = await _db.CartItems
+                .Where(c => c.UserId == userId)
+                .Join(
+                    _db.Products,
+                    cart => cart.ProductId,
+                    product => product.Id,
+                    (cart, product) => new CartItemResponseDto
+                    {
+                        CartItemId = cart.Id,
+                        ProductId = cart.ProductId,
+                        Quantity = cart.Quantity,
+                        CreatedAt = cart.CreatedAt,
+                        Product = new ProductSummaryDto
+                        {
+                            Id = product.Id,
+                            Name = product.Name,
+                            Description = product.Description,
+                            Price = product.Price,
+                            Stock = product.Stock,
+                            Category = product.Category,
+                            ImageUrl = product.ImageUrl
+                        }
+                    })
+                .ToListAsync();
+
             return Ok(items);
         }
 
@@ -56,6 +80,38 @@ namespace EcommerceBackend.Controllers
             }
             await _db.SaveChangesAsync();
             return Ok();
+        }
+
+        [HttpDelete("item/{productId:guid}")]
+        public async Task<IActionResult> RemoveItem(Guid productId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var existing = await _db.CartItems.SingleOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+            if (existing == null)
+                return NotFound();
+
+            _db.CartItems.Remove(existing);
+            await _db.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpDelete("clear")]
+        public async Task<IActionResult> ClearCart()
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var items = await _db.CartItems.Where(c => c.UserId == userId).ToListAsync();
+            if (items.Count == 0)
+                return NoContent();
+
+            _db.CartItems.RemoveRange(items);
+            await _db.SaveChangesAsync();
+
+            return NoContent();
         }
 
         [HttpPost("checkout")]
@@ -92,4 +148,23 @@ namespace EcommerceBackend.Controllers
 
     public class AddDto { public Guid ProductId { get; set; } public int Quantity { get; set; } }
     public class CheckoutDto { public string BillingAddress { get; set; } = string.Empty; }
+    public class CartItemResponseDto
+    {
+        public Guid CartItemId { get; set; }
+        public Guid ProductId { get; set; }
+        public int Quantity { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public ProductSummaryDto Product { get; set; }
+    }
+
+    public class ProductSummaryDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+        public string Category { get; set; }
+        public string ImageUrl { get; set; }
+    }
 }
