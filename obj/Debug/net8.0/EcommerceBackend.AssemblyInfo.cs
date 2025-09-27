@@ -13,11 +13,15 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EcommerceBackend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2eff0ebc78b787786dcd9410cabec3d818aebfea")]
 =======
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1322c74f2c66e8e437d17204efcae4ea4ef3626f")]
 >>>>>>> prueba-back
+=======
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+39f23cbf9ad6df9a395e355ed6b29ddac4c6cbcb")]
+>>>>>>> Stashed changes
 [assembly: System.Reflection.AssemblyProductAttribute("EcommerceBackend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EcommerceBackend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
