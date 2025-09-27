@@ -6,7 +6,7 @@ namespace EcommerceBackend.Security
 {
     public static class JwtKeyProvider
     {
-        private const int MinimumKeyBytes = 16;
+        private const int MinimumKeyBytes = 32;
 
         public static string GetSigningKey(IConfiguration configuration)
         {
@@ -22,7 +22,7 @@ namespace EcommerceBackend.Security
             if (Encoding.UTF8.GetByteCount(key) < MinimumKeyBytes)
             {
                 throw new InvalidOperationException(
-                    "The configured JWT signing key must be at least 16 bytes long when encoded as UTF-8."
+                    "The configured JWT signing key must be at least 32 bytes long when encoded as UTF-8."
                 );
             }
 

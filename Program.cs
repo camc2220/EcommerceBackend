@@ -43,10 +43,10 @@ var jwtKey = builder.Configuration["Jwt:Key"]
               ?? Environment.GetEnvironmentVariable("Jwt__Key")
               ?? "development-secret-key-change-me";
 
-if (jwtKey.Length < 16)
+if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
 {
     throw new InvalidOperationException(
-        "JWT key must be at least 16 characters long. Set Jwt:Key/Jwt__Key to a secure value.");
+        "JWT key must be at least 32 bytes long. Set Jwt:Key/Jwt__Key to a secure value.");
 }
 
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
